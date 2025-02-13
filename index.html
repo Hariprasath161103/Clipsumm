@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+       
+    <meta charset="UTF-8">
+       
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Videx</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <nav>
+        <div class="logo">
+            <img src="/images/videx.jpg" alt="Logo">
+        </div>
+        <div>
+            <h1 id="name">Videx</h1>
+        </div>
+    </nav>
+        <h1 class="head">Video Summarizer</h1>
+        <input type="text" id="videoUrlInput" placeholder="Enter video URL">
+        <button class="btn">Summarize The Video ⚡</button>
+    <h2 id="tid"></h2>
+        <div>
+                <video id="videoPlayer" controls width="480"></video>
+            </div>
+    <div class="search">
+        <input type="text" id="searchInput" placeholder="Search in response" oninput="highlightText()">
+    </div>
+    <input type="text" id="sceneIdInput" placeholder="Enter SCENE_ID">
+    <button onclick="fetchSceneDetails()">Fetch Details</button>
+
+        <div id="response">
+
+    </div>
+    <div>
+        <h1 id="act">Actions with Timstamps : </h1>
+    </div>
+    <div id="events-container"></div>
+    <div id="response">
+        <div id="summary">Summary</div>
+        <div id="sum"></div>
+    </div>
+
+
+       
+    <script type="module" src="index.js"></script>
+    <script>
+        function highlightText() {
+            const searchInput = document.getElementById("searchInput").value;
+
+
+            const eventsContainer = document.getElementById("events-container");
+            const summaryDiv = document.getElementById("sum");
+
+
+            const eventsText = eventsContainer.innerHTML;
+            const summaryText = summaryDiv.innerHTML;
+
+
+            eventsContainer.innerHTML = eventsText.replace(/<mark>(.*?)<\/mark>/g, '$1');
+            summaryDiv.innerHTML = summaryText.replace(/<mark>(.*?)<\/mark>/g, '$1');
+
+
+            if (searchInput) {
+                const regex = new RegExp(`(${searchInput})`, 'gi');
+
+
+                eventsContainer.innerHTML = eventsContainer.innerHTML.replace(regex, '<mark>$1</mark>');
+
+
+                summaryDiv.innerHTML = summaryDiv.innerHTML.replace(regex, '<mark>$1</mark>');
+            }
+        }
+
+
+        function fetchSceneDetails() {
+            const SCENE_ID = document.getElementById("sceneIdInput").value;
+            if (!SCENE_ID) {
+                alert("Please enter a SCENE_ID");
+                return;
+            }
+
+            fetch(`https://api.scenex.jina.ai/v1/scene/${SCENE_ID}`, {
+                headers: {
+                    'x-api-key': `token ${'pbWK7RWlH1LWtuYZbZ75:01f7cd55499a601c853af7c90c7b938b9d7107518869a1f3e2660782081395ee'}`,
+                    'content-type': 'application/json'
+                },
+                method: 'GET'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    let arr = data.result.data.i18n.en.events;
+                    const eventsContainer = document.getElementById("events-container");
+                    if (!eventsContainer) {
+                        console.error("Element with ID 'events-container' not found");
+                        return;
+                    }
+
+                    arr.map((item, index) => {
+                        const eventContainer = document.createElement("div");
+                        const timestampElement = document.createElement("div");
+                        timestampElement.style.color = "blue";
+                        timestampElement.style.fontSize = "24px";
+                        timestampElement.style.margin = "10px";
+                        timestampElement.style.marginRight = "0px";
+                        timestampElement.innerText = `Time ${index + 1}: ${item.timestamp}`;
+                        eventContainer.appendChild(timestampElement);
+
+                        const descriptionElement = document.createElement("div");
+                        descriptionElement.innerText = `Description ${index + 1}: ${item.description}`;
+                        eventContainer.appendChild(descriptionElement);
+
+                        eventsContainer.appendChild(eventContainer);
+                    });
+                    document.getElementById("sum").innerText = data.result.data.i18n.en.summary
+                    console.log(data.result.data.i18n.en.events);
+                    console.log(data.result.data.i18n.en.summary);
+
+                })
+                .catch(error => {
+                    console.error("Error fetching scene details:", error);
+                    document.getElementById("apiResponse").innerText = "Failed to fetch data. Please check the SCENE_ID and token.";
+                });
+        }
+    </script>
+
+</body>
+
+
+</html>
